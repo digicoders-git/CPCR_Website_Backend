@@ -34,18 +34,39 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'cpcr_secret_key_2024';
 
+
 // Middleware
+const allowedOrigins = [
+  'https://www.cpcr.in',
+  'https://cpcr.in',
+  'https://admin.cpcr.in',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5174',
+  'http://localhost:5175'
+];
+
+// Add origins from environment variable if they exist
+if (process.env.ALLOWED_ORIGINS) {
+  const envOrigins = process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
+  allowedOrigins.push(...envOrigins);
+}
+
 app.use(cors({
-  origin: [
-    'https://www.cpcr.in',
-    'https://cpcr.in',
-    'https://admin.cpcr.in',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:5174'
-  ],
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
