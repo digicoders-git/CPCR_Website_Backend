@@ -35,7 +35,17 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'cpcr_secret_key_2024';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://www.cpcr.in',
+    'https://cpcr.in',
+    'https://admin.cpcr.in',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:5174'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
