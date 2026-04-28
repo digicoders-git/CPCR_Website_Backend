@@ -52,22 +52,18 @@ if (process.env.ALLOWED_ORIGINS) {
   allowedOrigins.push(...envOrigins);
 }
 
+
 app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true
 }));
 
+app.get('/', (req, res) => {
+  res.send('CPCR API is running');
+});
+
 app.use(express.json());
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Database Connection
