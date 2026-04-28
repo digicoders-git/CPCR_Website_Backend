@@ -54,12 +54,29 @@ if (process.env.ALLOWED_ORIGINS) {
 
 
 app.use(cors({
-  origin: true,
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Allow all for now, restrict if needed
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Handle preflight requests explicitly
+app.options('/{*path}', cors());
 
 app.get('/', (req, res) => {
   res.send('CPCR API is running');
+});
+
+// Health check / keep-alive endpoint
+app.get('/ping', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.use(express.json());
