@@ -3,7 +3,27 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const uploadToCloudinary = async (filePath) => {
+  try {
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: 'cpcr_portfolio',
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary Upload Error:', error);
+    return null;
+  }
+};
 
 const Blog = require('./models/Blog');
 const User = require('./models/User');
@@ -23,6 +43,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.log(err));
+
+const fs = require('fs');
+
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
 // Multer Setup for Image Upload
 const storage = multer.diskStorage({
@@ -127,20 +155,17 @@ app.get('/api/blogs/:id', async (req, res) => {
   }
 });
 
-app.post('/api/blogs', upload.single('image'), async (req, res) => {
+app.post('/api/blogs', auth, upload.single('image'), async (req, res) => {
   try {
     const { title, excerpt, category, date, content } = req.body;
-    const img = req.file ? `/uploads/${req.file.filename}` : req.body.img;
+    let imgUrl = req.body.img || '/work-1.png';
     
-    const newBlog = new Blog({
-      title,
-      excerpt,
-      category,
-      date,
-      content,
-      img
-    });
+    if (req.file) {
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path);
+      imgUrl = cloudinaryUrl || `/uploads/${req.file.filename}`;
+    }
 
+    const newBlog = new Blog({ title, excerpt, category, date, content, img: imgUrl });
     const savedBlog = await newBlog.save();
     res.status(201).json(savedBlog);
   } catch (err) {
@@ -148,13 +173,14 @@ app.post('/api/blogs', upload.single('image'), async (req, res) => {
   }
 });
 
-app.put('/api/blogs/:id', upload.single('image'), async (req, res) => {
+app.put('/api/blogs/:id', auth, upload.single('image'), async (req, res) => {
   try {
     const { title, excerpt, category, date, content } = req.body;
     const updateData = { title, excerpt, category, date, content };
     
     if (req.file) {
-      updateData.img = `/uploads/${req.file.filename}`;
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path);
+      updateData.img = cloudinaryUrl || `/uploads/${req.file.filename}`;
     } else if (req.body.img) {
       updateData.img = req.body.img;
     }
@@ -191,10 +217,15 @@ app.get('/api/assignments/:id', async (req, res) => {
 app.post('/api/assignments', auth, upload.single('image'), async (req, res) => {
   try {
     const { title, location, category, client, date, description } = req.body;
-    const img = req.file ? `/uploads/${req.file.filename}` : req.body.img;
+    let imgUrl = req.body.img || '/work-1.png';
+    
+    if (req.file) {
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path);
+      imgUrl = cloudinaryUrl || `/uploads/${req.file.filename}`;
+    }
     
     const newAssignment = new Assignment({
-      title, location, category, client, date, description, img
+      title, location, category, client, date, description, img: imgUrl
     });
 
     const savedAssignment = await newAssignment.save();
@@ -210,7 +241,8 @@ app.put('/api/assignments/:id', auth, upload.single('image'), async (req, res) =
     const updateData = { title, location, category, client, date, description };
     
     if (req.file) {
-      updateData.img = `/uploads/${req.file.filename}`;
+      const cloudinaryUrl = await uploadToCloudinary(req.file.path);
+      updateData.img = cloudinaryUrl || `/uploads/${req.file.filename}`;
     } else if (req.body.img) {
       updateData.img = req.body.img;
     }
