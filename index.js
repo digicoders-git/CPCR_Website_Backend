@@ -222,10 +222,43 @@ app.put('/api/assignments/:id', auth, upload.single('image'), async (req, res) =
   }
 });
 
-app.delete('/api/assignments/:id', auth, async (req, res) => {
+const Enquiry = require('./models/Enquiry');
+
+// Enquiry Routes
+app.post('/api/enquiries', async (req, res) => {
   try {
-    await Assignment.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Assignment deleted' });
+    const { name, phone, email, message } = req.body;
+    const newEnquiry = new Enquiry({ name, phone, email, message });
+    await newEnquiry.save();
+    res.status(201).json({ message: 'Enquiry sent successfully' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.get('/api/enquiries', auth, async (req, res) => {
+  try {
+    const enquiries = await Enquiry.find().sort({ createdAt: -1 });
+    res.json(enquiries);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/enquiries/:id', auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const updatedEnquiry = await Enquiry.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    res.json(updatedEnquiry);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.delete('/api/enquiries/:id', auth, async (req, res) => {
+  try {
+    await Enquiry.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Enquiry deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
