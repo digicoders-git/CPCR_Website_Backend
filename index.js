@@ -54,16 +54,21 @@ if (process.env.ALLOWED_ORIGINS) {
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
+    // Log the origin for debugging in Render logs
+    console.log('Incoming Request Origin:', origin);
     
-    // Check if origin is in allowed list or if we're in development
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+    // Explicitly return the incoming origin to allow it (needed for credentials: true)
+    callback(null, origin || true);
+    
+    /* 
+    // Uncomment and update this list after debugging
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     } else {
       console.log('Origin not allowed by CORS:', origin);
       return callback(new Error('Not allowed by CORS'));
     }
+    */
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
