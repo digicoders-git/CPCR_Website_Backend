@@ -69,8 +69,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'authorization']
 }));
 
-// Handle preflight requests explicitly
-app.options('*', cors());
+// Handle preflight requests is already handled by app.use(cors()) above
+
 
 app.get('/', (req, res) => {
   res.send('CPCR API is running');
@@ -182,7 +182,6 @@ app.put('/api/auth/change-password', auth, async (req, res) => {
 
 // Blog Routes
 app.get('/api/blogs', async (req, res) => {
-// ...
   try {
     const blogs = await Blog.find().sort({ createdAt: -1 });
     res.json(blogs);
