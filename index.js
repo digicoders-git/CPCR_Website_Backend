@@ -238,6 +238,16 @@ app.put('/api/blogs/:id', auth, upload.single('image'), async (req, res) => {
   }
 });
 
+app.delete('/api/blogs/:id', auth, async (req, res) => {
+  try {
+    const blog = await Blog.findByIdAndDelete(req.params.id);
+    if (!blog) return res.status(404).json({ message: 'Blog not found' });
+    res.json({ message: 'Blog deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 const Assignment = require('./models/Assignment');
 
 // Assignment Routes
@@ -297,6 +307,16 @@ app.put('/api/assignments/:id', auth, upload.single('image'), async (req, res) =
     res.json(updatedAssignment);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+app.delete('/api/assignments/:id', auth, async (req, res) => {
+  try {
+    const assignment = await Assignment.findByIdAndDelete(req.params.id);
+    if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
+    res.json({ message: 'Assignment deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
